@@ -1,4 +1,4 @@
-#include<stdio.h>
+ #include<stdio.h>
 #include<stdlib.h>
 #include<sys/time.h>
 
@@ -50,7 +50,7 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 	float sum = 0.0f;
 
 	for(int i = 0; i < (BLOCK_SIZE *width); i+=width){
-		for(int j = 0; j < BLOCK_SIZE; j+=2){
+		for(int j = 0; j < BLOCK_SIZE; j++){
 			sum += in[start + i + j] * mul[j];
 		}
 	}
