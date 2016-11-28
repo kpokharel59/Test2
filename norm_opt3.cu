@@ -48,10 +48,11 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 	if(tx >= width || ty >= SIZE/width) return;
 	int start = blockIdx.x * blockDim.x * width + blockIdx.y * blockDim.y;
 	float sum = 0.0f;
+	int consTemp = start + BLOCK_SIZE *width;
 
-	for(int i = 0; i < (BLOCK_SIZE *width); i+=width){
+	for(int i = start; i < consTemp; i+=width){
 		for(int j = 0; j < BLOCK_SIZE; j++){
-			sum += in[start + i + j] * mul[j];
+			sum += in[i + j] * mul[j];
 		}
 	}
 	if(tx % 2 == 0 && ty % 2 == 0)
