@@ -110,14 +110,14 @@ int main(){
 	cudaArray* B_Array;
 	cudaMallocArray(&A_Array, &channelDescA, trans_size,trans_size);
 	cudaMallocArray(&B_Array, &forB,trans_size,trans_size,cudaArraySurfaceLoadStore);
-	cudaMemcpyToArray(A_Array, 0, 0, hA_in, SIZE,
+	cudaMemcpyToArray(A_Array, 0, 0, hA_in, sizeof(float)*SIZE,
                       cudaMemcpyHostToDevice);
 	tex_A.addressMode[0] = cudaAddressModeWrap;
     tex_A.addressMode[1] = cudaAddressModeWrap;
     tex_A.filterMode     = cudaFilterModePoint;
 	cudaBindTextureToArray(tex_A, A_Array, channelDescA);
 	cudaBindSurfaceToArray(surf,B_Array,forB);
-	cudaBindTexture(0,tex_1DA,dA_in,SIZE);
+	cudaBindTexture(0,tex_1DA,dA_in,sizeof(float)*SIZE);
 	//////////
 	
 	
@@ -134,7 +134,7 @@ int main(){
 
 	printf("kernel time %fs\n", end.tv_sec - start.tv_sec + (end.tv_nsec - start.tv_nsec)/1.e9);
 	//cudaMemcpy(hA_out, dA_out, SIZE * sizeof(float), cudaMemcpyDeviceToHost);
-	cudaMemcpyFromArray(hA_out,B_Array,0,0,SIZE,cudaMemcpyDeviceToHost);
+	cudaMemcpyFromArray(hA_out,B_Array,0,0,sizeof(float)*SIZE,cudaMemcpyDeviceToHost);
 	checkresult(ref, hA_in, hA_out, hB_in, BLOCK_SIZE * GRID_SIZE);
 
 }
