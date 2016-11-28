@@ -50,9 +50,9 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 	float sum = 0.0f;
 	//int constemp = start + BLOCK_SIZE *width;
 
-	for(int i = start; i < (start + BLOCK_SIZE *width); i+=width){
+	for(int i = 0; i < ( BLOCK_SIZE *width); i+=width){
 		for(int j = 0; j < BLOCK_SIZE; j++){
-			sum += in[i + j] * mul[j];
+			sum += in[start + i + j] * mul[j];
 		}
 	}
 	if(tx % 2 == 0 && ty % 2 == 0)
