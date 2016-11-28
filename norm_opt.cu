@@ -1,4 +1,4 @@
-#include<stdio.h>
+ #include<stdio.h>
 #include<stdlib.h>
 #include<sys/time.h>
 
@@ -46,8 +46,8 @@ void checkresult(float *ref, float *in, float *out, float *mul, int width){
 }
 
 __global__ void norm(float *in, float *out, float *mul, int width){
-	int tx = blockIdx.x * BLOCK_SIZE + threadIdx.x;
-	int ty = blockIdx.y * BLOCK_SIZE + threadIdx.y;
+	unsigned int tx = blockIdx.x * BLOCK_SIZE + threadIdx.x;
+	unsigned int ty = blockIdx.y * BLOCK_SIZE + threadIdx.y;
 
 	if(tx >= width || ty >= SIZE/width) return;
 	int start = blockIdx.x * BLOCK_SIZE * width + blockIdx.y * BLOCK_SIZE;
@@ -61,16 +61,16 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 	
 	//surf2Dwrite((2.0 * in[tx * width + ty]/sum),surf,ty*sizeof(float),tx);
 	if(tx % 2 == 0 && ty % 2 == 0)
-		surf2Dwrite((2.0 * in[tx * width + ty]/sum),surf,ty*sizeof(float),tx);
+		surf2Dwrite((2.0 * in[tx * width + ty]/sum),surf,tx*sizeof(float),ty);
 		//out[tx * width + ty] = 2.0 * in[tx * width + ty]/sum;
 	else if(tx % 2 == 1 && ty % 2 == 0)
-		surf2Dwrite((in[tx * width + ty]/sum),surf,ty*sizeof(float),tx);
+		surf2Dwrite((in[tx * width + ty]/sum),surf,tx*sizeof(float),ty);
 		//out[tx * width + ty] = in[tx * width + ty]/sum;
 	else if(tx % 2 == 1 && ty % 2 == 1)
-		surf2Dwrite(((-1.0) * in[tx * width + ty]/sum),surf,ty*sizeof(float),tx);
+		surf2Dwrite(((-1.0) * in[tx * width + ty]/sum),surf,tx*sizeof(float),ty);
 		//out[tx * width + ty] = (-1.0) * in[tx * width + ty]/sum;
 	else
-		surf2Dwrite((0.0f),surf,ty*sizeof(float),tx);
+		surf2Dwrite((0.0f),surf,tx*sizeof(float),ty);
 		//out[tx * width + ty] = 0.0f;
 
 }
