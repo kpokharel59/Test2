@@ -54,7 +54,7 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 		for(int j = 0; j < BLOCK_SIZE; j++){
 			sum += in[constemp + j] * mul[j];
 		}
-		constemp+=widht;
+		constemp+=width;
 	}
 	if(tx % 2 == 0 && ty % 2 == 0)
 		out[tx * width + ty] = 2.0 * in[tx * width + ty]/sum;
