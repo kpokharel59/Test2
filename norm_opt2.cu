@@ -78,8 +78,8 @@ int main(){
 
 	for(int i = 0; i < (SIZE+BLOCK_SIZE); i++){
 		hA_in[i] = (float)rand()/(float)RAND_MAX;
-		if(i>=SIZE)
-			hB_in[i-SIZE] =hA_in[i] ;
+		//if(i>=SIZE)
+			//hB_in[i-SIZE] =hA_in[i] ;
 	}
 	//for(int i = 0; i < BLOCK_SIZE; i++){
 	//	hB_in[i] = (float)rand()/(float)RAND_MAX;
@@ -104,6 +104,6 @@ int main(){
 
 	printf("kernel time %fs\n", end.tv_sec - start.tv_sec + (end.tv_nsec - start.tv_nsec)/1.e9);
 	cudaMemcpy(hA_out, dA_out, SIZE * sizeof(float), cudaMemcpyDeviceToHost);
-	checkresult(ref, hA_in, hA_out, hB_in, BLOCK_SIZE * GRID_SIZE);
+	checkresult(ref, hA_in, hA_out, hA_in+SIZE, BLOCK_SIZE * GRID_SIZE);
 
 }
