@@ -57,16 +57,16 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 	
 	//second optimization
 	int index_loc=tx * width + ty;
-	out[index_loc]= (in[index_loc]/sum);
+	out[index_loc]= in[index_loc]/sum;
 	
 	if(tx % 2 == 0 && ty % 2 == 0)
-		out[index_loc]* = 2.0 ;
-	else if(tx % 2 == 1 && ty % 2 == 0)
-		out[index_loc]* = 1.0 ;
+		out[index_loc] = out[index_loc]*2.0 ;
+	else if(tx % 2 == 1 && ty % 2 == 0);
+		//out[index_loc] = out[index_loc] ;
 	else if(tx % 2 == 1 && ty % 2 == 1)
-		out[index_loc]* = -1.0 ;
+		out[index_loc] = out[index_loc]* (-1.0) ;
 	else
-		out[index_loc]* = 0.0f ;
+		out[index_loc] = 0.0f ;
 }
 
 
