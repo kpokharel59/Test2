@@ -1,14 +1,10 @@
- #include<stdio.h>
+#include<stdio.h>
 #include<stdlib.h>
 #include<sys/time.h>
 
 #define BLOCK_SIZE 16
 #define GRID_SIZE 160
 #define SIZE BLOCK_SIZE*BLOCK_SIZE*GRID_SIZE*GRID_SIZE
-
-texture<float,1,cudaReadModeElementType> tex_1DA;
-texture<float,2,cudaReadModeElementType> tex_A;
-surface<void,2> surf;
 
 void checkresult(float *ref, float *in, float *out, float *mul, int width){
 	
@@ -46,11 +42,11 @@ void checkresult(float *ref, float *in, float *out, float *mul, int width){
 }
 
 __global__ void norm(float *in, float *out, float *mul, int width){
-	unsigned int tx = blockIdx.x * BLOCK_SIZE + threadIdx.x;
-	unsigned int ty = blockIdx.y * BLOCK_SIZE + threadIdx.y;
+	int tx = blockIdx.x * blockDim.x + threadIdx.x;
+	int ty = blockIdx.y * blockDim.y + threadIdx.y;
 
 	if(tx >= width || ty >= SIZE/width) return;
-	int start = blockIdx.x * BLOCK_SIZE * width + blockIdx.y * BLOCK_SIZE;
+	int start = blockIdx.x * blockDim.x * width + blockIdx.y * blockDim.y;
 	float sum = 0.0f;
 
 	for(int i = 0; i < BLOCK_SIZE; i++){
@@ -58,20 +54,14 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 			sum += in[start + i * width + j] * mul[j];
 		}
 	}
-	
-	//surf2Dwrite((2.0 * in[tx * width + ty]/sum),surf,ty*sizeof(float),tx);
 	if(tx % 2 == 0 && ty % 2 == 0)
-		surf2Dwrite((2.0 * in[tx * width + ty]/sum),surf,ty*sizeof(float),tx);
-		//out[tx * width + ty] = 2.0 * in[tx * width + ty]/sum;
+		out[tx * width + ty] = 2.0 * in[tx * width + ty]/sum;
 	else if(tx % 2 == 1 && ty % 2 == 0)
-		surf2Dwrite((in[tx * width + ty]/sum),surf,ty*sizeof(float),tx);
-		//out[tx * width + ty] = in[tx * width + ty]/sum;
+		out[tx * width + ty] = in[tx * width + ty]/sum;
 	else if(tx % 2 == 1 && ty % 2 == 1)
-		surf2Dwrite(((-1.0) * in[tx * width + ty]/sum),surf,ty*sizeof(float),tx);
-		//out[tx * width + ty] = (-1.0) * in[tx * width + ty]/sum;
+		out[tx * width + ty] = (-1.0) * in[tx * width + ty]/sum;
 	else
-		surf2Dwrite((0.0f),surf,ty*sizeof(float),tx);
-		//out[tx * width + ty] = 0.0f;
+		out[tx * width + ty] = 0.0f;
 
 }
 
@@ -86,9 +76,6 @@ int main(){
 
 	srand(2016);
 
-	//
-	const unsigned int trans_size= GRID_SIZE * BLOCK_SIZE;
-	 
 	for(int i = 0; i < SIZE; i++){
 		hA_in[i] = (float)rand()/(float)RAND_MAX;
 	}
@@ -102,25 +89,6 @@ int main(){
 
 	cudaMemcpy(dA_in, hA_in, SIZE * sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(dB_in, hB_in, BLOCK_SIZE * sizeof(float), cudaMemcpyHostToDevice);
-	
-	//////////
-	 cudaChannelFormatDesc channelDescA =  cudaCreateChannelDesc<float>();
-	cudaChannelFormatDesc forB= cudaCreateChannelDesc<float>();//cudaCreateChannelDesc(32,0,0,0,cudaChannelFormatKindFloat);
-	cudaArray* A_Array;
-	cudaArray* B_Array;
-	cudaMallocArray(&A_Array, &channelDescA, trans_size,trans_size);
-	cudaMallocArray(&B_Array, &forB,trans_size,trans_size,cudaArraySurfaceLoadStore);
-	cudaMemcpyToArray(A_Array, 0, 0, hA_in, sizeof(float)*SIZE,
-                      cudaMemcpyHostToDevice);
-	tex_A.addressMode[0] = cudaAddressModeWrap;
-    tex_A.addressMode[1] = cudaAddressModeWrap;
-    tex_A.filterMode     = cudaFilterModePoint;
-	cudaBindTextureToArray(tex_A, A_Array, channelDescA);
-	cudaBindSurfaceToArray(surf,B_Array,forB);
-	cudaBindTexture(0,tex_1DA,dA_in,sizeof(float)*SIZE);
-	//////////
-	
-	
 	struct timespec start, end;	
 	dim3 grid(GRID_SIZE, GRID_SIZE, 1);
 	dim3 block(BLOCK_SIZE, BLOCK_SIZE, 1);
@@ -133,8 +101,7 @@ int main(){
 	clock_gettime(CLOCK_REALTIME, &end);
 
 	printf("kernel time %fs\n", end.tv_sec - start.tv_sec + (end.tv_nsec - start.tv_nsec)/1.e9);
-	//cudaMemcpy(hA_out, dA_out, SIZE * sizeof(float), cudaMemcpyDeviceToHost);
-	cudaMemcpyFromArray(hA_out,B_Array,0,0,sizeof(float)*SIZE,cudaMemcpyDeviceToHost);
+	cudaMemcpy(hA_out, dA_out, SIZE * sizeof(float), cudaMemcpyDeviceToHost);
 	checkresult(ref, hA_in, hA_out, hB_in, BLOCK_SIZE * GRID_SIZE);
 
 }
