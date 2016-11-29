@@ -62,7 +62,7 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 	out[index_loc]= in[index_loc]/sum;
 		
 	//thread divergence optimization
-	out[include] = (2.0 - (tx % 2) -2.0*(ty % 2))* out[index_loc];
+	out[index_loc] = (2.0 - (tx % 2) -2.0*(ty % 2))* out[index_loc];
 
 }
 
