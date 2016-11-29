@@ -1,5 +1,5 @@
 NVCC=nvcc -w  
-all: norm norm_opt1 norm_opt2 norm_opt3
+all: norm norm_opt1 norm_opt2 norm_opt3 norm_optAll
 norm: norm.cu
 	$(NVCC) -o $@ $^
 
@@ -12,5 +12,8 @@ norm_opt2: norm_opt2.cu
 norm_opt3: norm_opt3.cu
 	$(NVCC) -o $@ $^
 	
+norm_optAll: norm_optAll.cu
+	$(NVCC) -o $@ $^
+	
 clean:
-	rm norm norm_opt1 norm_opt2 norm_opt3
+	rm norm norm_opt1 norm_opt2 norm_opt3 norm_optAll

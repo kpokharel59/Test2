@@ -6,3 +6,5 @@ echo "Running time for Optimization 2"
 ./norm_opt2
 echo "Running time for Optimization 3"
 ./norm_opt3
+echo "Running time for All Optimization"
+./norm_optAll
