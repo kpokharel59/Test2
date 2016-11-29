@@ -45,7 +45,7 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 	int tx = blockIdx.x * blockDim.x + threadIdx.x;
 	int ty = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if(tx >= width || ty >= (SIZE/width)) return;
+	if(tx >= width || ty >= SIZE/width) return;
 	int start = blockIdx.x * blockDim.x * width + blockIdx.y * blockDim.y;
 	float sum = 0.0f;
 
@@ -54,19 +54,15 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 			sum += in[start + i * width + j] * mul[j];
 		}
 	}
-	
-	//second optimization
-	int index_loc=tx * width + ty;
-	out[index_loc]= in[index_loc]/sum;
-	
 	if(tx % 2 == 0 && ty % 2 == 0)
-		out[index_loc] = out[index_loc]*2.0 ;
-	else if(tx % 2 == 1 && ty % 2 == 0);
-		//out[index_loc] = out[index_loc] ;
+		out[tx * width + ty] = 2.0 * in[tx * width + ty]/sum;
+	else if(tx % 2 == 1 && ty % 2 == 0)
+		out[tx * width + ty] = in[tx * width + ty]/sum;
 	else if(tx % 2 == 1 && ty % 2 == 1)
-		out[index_loc] = out[index_loc]* (-1.0) ;
+		out[tx * width + ty] = (-1.0) * in[tx * width + ty]/sum;
 	else
-		out[index_loc] = 0.0f ;
+		out[tx * width + ty] = 0.0f;
+
 }
 
 
