@@ -56,8 +56,8 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 		}
 		constemp+=width;
 	}
-	
- 	//thread divergence optimization
+
+	//thread divergence optimization
 	out[tx * width + ty] = (2.0 - (tx % 2) -2.0*(ty % 2))* in[tx * width + ty]/sum;
 
 }
@@ -65,7 +65,7 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 
 
 int main(){
-	float *hA_in = (float *)malloc((SIZE+BLOCK_SIZE) * sizeof(float));
+	float *hA_in = (float *)malloc(SIZE * sizeof(float));
 	float *hA_out = (float *)malloc(SIZE * sizeof(float));
 	float *hB_in = (float *)malloc(BLOCK_SIZE * sizeof(float));
 	float *ref = (float *)malloc(SIZE * sizeof(float));
@@ -73,18 +73,18 @@ int main(){
 
 	srand(2016);
 
-	for(int i = 0; i < (SIZE); i++){
+	for(int i = 0; i < SIZE; i++){
 		hA_in[i] = (float)rand()/(float)RAND_MAX;
 	}
 	for(int i = 0; i < BLOCK_SIZE; i++){
 		hB_in[i] = (float)rand()/(float)RAND_MAX;
 	}
 
-	cudaMalloc((void **)&dA_in, (SIZE+BLOCK_SIZE) * sizeof(float));
+	cudaMalloc((void **)&dA_in, SIZE * sizeof(float));
 	cudaMalloc((void **)&dA_out, SIZE * sizeof(float));
 	cudaMalloc((void **)&dB_in, BLOCK_SIZE * sizeof(float));
 
-	cudaMemcpy(dA_in, hA_in, (SIZE) * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(dA_in, hA_in, SIZE * sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(dB_in, hB_in, BLOCK_SIZE * sizeof(float), cudaMemcpyHostToDevice);
 	struct timespec start, end;	
 	dim3 grid(GRID_SIZE, GRID_SIZE, 1);
@@ -92,7 +92,7 @@ int main(){
 	cudaDeviceSynchronize();
 	clock_gettime(CLOCK_REALTIME, &start);
 
-	norm<<<grid, block>>>(dA_in, dA_out, dA_in+SIZE,BLOCK_SIZE * GRID_SIZE);
+	norm<<<grid, block>>>(dA_in, dA_out, dB_in, BLOCK_SIZE * GRID_SIZE);
 
 	cudaDeviceSynchronize();
 	clock_gettime(CLOCK_REALTIME, &end);
