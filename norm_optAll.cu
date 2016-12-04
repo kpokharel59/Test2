@@ -2,8 +2,8 @@
 #include<stdlib.h>
 #include<sys/time.h>
 
-#define BLOCK_SIZE 16
-#define GRID_SIZE 160
+#define BLOCK_SIZE 8
+#define GRID_SIZE 320
 #define SIZE BLOCK_SIZE*BLOCK_SIZE*GRID_SIZE*GRID_SIZE
 
 void checkresult(float *ref, float *in, float *out, float *mul, int width){
@@ -57,12 +57,8 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 		constemp+=width;
 	}
 	
-	// second optimization
-	int index_loc=tx * width + ty;
-	out[index_loc]= in[index_loc]/sum;
-		
-	//thread divergence optimization
-	out[index_loc] = (2.0 - (tx % 2) -2.0*(ty % 2))* out[index_loc];
+ 	//thread divergence optimization
+	out[tx * width + ty] = (2.0 - (tx % 2) -2.0*(ty % 2))* in[tx * width + ty]/sum;
 
 }
 
@@ -77,21 +73,19 @@ int main(){
 
 	srand(2016);
 
-	for(int i = 0; i < (SIZE+BLOCK_SIZE); i++){
+	for(int i = 0; i < (SIZE); i++){
 		hA_in[i] = (float)rand()/(float)RAND_MAX;
-		if(i>=SIZE)
-			hB_in[i-SIZE] =hA_in[i] ;
 	}
-	//for(int i = 0; i < BLOCK_SIZE; i++){
-	//	hB_in[i] = (float)rand()/(float)RAND_MAX;
-	//}
+	for(int i = 0; i < BLOCK_SIZE; i++){
+		hB_in[i] = (float)rand()/(float)RAND_MAX;
+	}
 
 	cudaMalloc((void **)&dA_in, (SIZE+BLOCK_SIZE) * sizeof(float));
 	cudaMalloc((void **)&dA_out, SIZE * sizeof(float));
-	//cudaMalloc((void **)&dB_in, BLOCK_SIZE * sizeof(float));
+	cudaMalloc((void **)&dB_in, BLOCK_SIZE * sizeof(float));
 
-	cudaMemcpy(dA_in, hA_in, (SIZE+BLOCK_SIZE) * sizeof(float), cudaMemcpyHostToDevice);
-	//cudaMemcpy(dB_in, hB_in, BLOCK_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(dA_in, hA_in, (SIZE) * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(dB_in, hB_in, BLOCK_SIZE * sizeof(float), cudaMemcpyHostToDevice);
 	struct timespec start, end;	
 	dim3 grid(GRID_SIZE, GRID_SIZE, 1);
 	dim3 block(BLOCK_SIZE, BLOCK_SIZE, 1);

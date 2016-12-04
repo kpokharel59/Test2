@@ -1,9 +1,9 @@
- #include<stdio.h>
+#include<stdio.h>
 #include<stdlib.h>
 #include<sys/time.h>
 
-#define BLOCK_SIZE 16
-#define GRID_SIZE 160
+#define BLOCK_SIZE 8
+#define GRID_SIZE 320
 #define SIZE BLOCK_SIZE*BLOCK_SIZE*GRID_SIZE*GRID_SIZE
 
 void checkresult(float *ref, float *in, float *out, float *mul, int width){
@@ -45,7 +45,7 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 	int tx = blockIdx.x * blockDim.x + threadIdx.x;
 	int ty = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if(tx >= width || ty >= (SIZE/width)) return;
+	if(tx >= width || ty >= SIZE/width) return;
 	int start = blockIdx.x * blockDim.x * width + blockIdx.y * blockDim.y;
 	float sum = 0.0f;
 
@@ -54,25 +54,21 @@ __global__ void norm(float *in, float *out, float *mul, int width){
 			sum += in[start + i * width + j] * mul[j];
 		}
 	}
-	
-	//second optimization
-	int index_loc=tx * width + ty;
-	out[index_loc]= in[index_loc]/sum;
-	
 	if(tx % 2 == 0 && ty % 2 == 0)
-		out[index_loc] = out[index_loc]*2.0 ;
-	else if(tx % 2 == 1 && ty % 2 == 0);
-		//out[index_loc] = out[index_loc] ;
+		out[tx * width + ty] = 2.0 * in[tx * width + ty]/sum;
+	else if(tx % 2 == 1 && ty % 2 == 0)
+		out[tx * width + ty] = in[tx * width + ty]/sum;
 	else if(tx % 2 == 1 && ty % 2 == 1)
-		out[index_loc] = out[index_loc]* (-1.0) ;
+		out[tx * width + ty] = (-1.0) * in[tx * width + ty]/sum;
 	else
-		out[index_loc] = 0.0f ;
+		out[tx * width + ty] = 0.0f;
+
 }
 
 
 
 int main(){
-	float *hA_in = (float *)malloc((SIZE+BLOCK_SIZE) * sizeof(float));
+	float *hA_in = (float *)malloc(SIZE * sizeof(float));
 	float *hA_out = (float *)malloc(SIZE * sizeof(float));
 	float *hB_in = (float *)malloc(BLOCK_SIZE * sizeof(float));
 	float *ref = (float *)malloc(SIZE * sizeof(float));
@@ -80,28 +76,26 @@ int main(){
 
 	srand(2016);
 
-	for(int i = 0; i < (SIZE+BLOCK_SIZE); i++){
+	for(int i = 0; i < SIZE; i++){
 		hA_in[i] = (float)rand()/(float)RAND_MAX;
-		if(i>=SIZE)
-			hB_in[i-SIZE] =hA_in[i] ;
 	}
-	//for(int i = 0; i < BLOCK_SIZE; i++){
-	//	hB_in[i] = (float)rand()/(float)RAND_MAX;
-	//}
+	for(int i = 0; i < BLOCK_SIZE; i++){
+		hB_in[i] = (float)rand()/(float)RAND_MAX;
+	}
 
-	cudaMalloc((void **)&dA_in, (SIZE+BLOCK_SIZE) * sizeof(float));
+	cudaMalloc((void **)&dA_in, SIZE * sizeof(float));
 	cudaMalloc((void **)&dA_out, SIZE * sizeof(float));
-	//cudaMalloc((void **)&dB_in, BLOCK_SIZE * sizeof(float));
+	cudaMalloc((void **)&dB_in, BLOCK_SIZE * sizeof(float));
 
-	cudaMemcpy(dA_in, hA_in, (SIZE+BLOCK_SIZE) * sizeof(float), cudaMemcpyHostToDevice);
-	//cudaMemcpy(dB_in, hB_in, BLOCK_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(dA_in, hA_in, SIZE * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(dB_in, hB_in, BLOCK_SIZE * sizeof(float), cudaMemcpyHostToDevice);
 	struct timespec start, end;	
 	dim3 grid(GRID_SIZE, GRID_SIZE, 1);
 	dim3 block(BLOCK_SIZE, BLOCK_SIZE, 1);
 	cudaDeviceSynchronize();
 	clock_gettime(CLOCK_REALTIME, &start);
 
-	norm<<<grid, block>>>(dA_in, dA_out, dA_in+SIZE,BLOCK_SIZE * GRID_SIZE);
+	norm<<<grid, block>>>(dA_in, dA_out, dB_in, BLOCK_SIZE * GRID_SIZE);
 
 	cudaDeviceSynchronize();
 	clock_gettime(CLOCK_REALTIME, &end);
